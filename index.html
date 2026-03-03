@@ -499,8 +499,15 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  // Particles
+  // ── Supabase client ──────────────────────────────────────────────
+  const { createClient } = supabase;
+  const SUPABASE_URL = 'https://iinqvvjdnhxitoouhknk.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlpbnF2dmpkbmh4aXRvb3Voa25rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0Njg1OTksImV4cCI6MjA4ODA0NDU5OX0.IMWIwI21mF4y8MftqhQQyZw9mPevFu1vAfsxdwR0ImQ';
+  const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // ── Particles ────────────────────────────────────────────────────
   const pContainer = document.getElementById('particles');
   const colors = ['#ff6a00','#ffb300','#ff3d00','#ff8c00'];
   for (let i = 0; i < 25; i++) {
@@ -513,42 +520,91 @@
     pContainer.appendChild(p);
   }
 
-  // Page switching
+  // ── Page switching ───────────────────────────────────────────────
   function showPage(name) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById('page-' + name).classList.add('active');
     window.scrollTo(0, 0);
   }
 
-  // LOGIN
+  // ── Check if user is already logged in ──────────────────────────
+  async function checkSession() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+      await loadProfile(session.user.id);
+      showPage('profile');
+    }
+  }
+  checkSession();
+
+  // ── Load profile into UI ─────────────────────────────────────────
+  async function loadProfile(userId) {
+    const { data, error } = await sb.from('profiles').select('*').eq('id', userId).single();
+    if (data) {
+      document.querySelector('.gamer-name').innerHTML = data.username ? data.username.toUpperCase().replace('_', '_<span class="accent">') + '</span>' : 'PLAYER';
+      document.querySelector('.gamer-handle').textContent = '@' + (data.username || '').toLowerCase() + ' · ID: ' + data.game_id;
+      document.querySelector('.bio').textContent = data.bio || 'No bio yet.';
+      document.querySelector('.role-value').textContent = (data.role || 'RIFLER') + ' · SQUAD MEMBER';
+      document.querySelector('.avatar-img').textContent = data.avatar || '🐺';
+      if (data.rank) document.querySelector('.rank-name').textContent = data.rank;
+      if (data.rank_points) document.querySelector('.rank-points span').textContent = data.rank_points.toLocaleString();
+    }
+  }
+
+  // ── LOGIN ────────────────────────────────────────────────────────
   document.getElementById('loginTogglePw').addEventListener('click', function() {
     const i = document.getElementById('loginPw');
     i.type = i.type === 'password' ? 'text' : 'password';
     this.textContent = i.type === 'password' ? 'SHOW' : 'HIDE';
   });
-  document.getElementById('loginBtn').addEventListener('click', function() {
+
+  document.getElementById('loginBtn').addEventListener('click', async function() {
     const gid = document.getElementById('loginGameId').value.trim();
     const pw = document.getElementById('loginPw').value;
-    document.getElementById('loginError').classList.remove('show');
-    document.getElementById('loginSuccess').classList.remove('show');
-    if (!gid || !pw) { document.getElementById('loginError').textContent = '⚠ FILL IN ALL FIELDS'; document.getElementById('loginError').classList.add('show'); return; }
-    if (!/^\d{7,}$/.test(gid)) { document.getElementById('loginError').textContent = '⚠ GAME ID MUST BE 7+ DIGITS (NUMBERS ONLY)'; document.getElementById('loginError').classList.add('show'); return; }
-    if (pw.length < 6) { document.getElementById('loginError').textContent = '⚠ PASSWORD MUST BE 6+ CHARACTERS'; document.getElementById('loginError').classList.add('show'); return; }
+    const errEl = document.getElementById('loginError');
+    const sucEl = document.getElementById('loginSuccess');
+    errEl.classList.remove('show'); sucEl.classList.remove('show');
+
+    if (!gid || !pw) { errEl.textContent = '⚠ FILL IN ALL FIELDS'; errEl.classList.add('show'); return; }
+    if (!/^\d{7,}$/.test(gid)) { errEl.textContent = '⚠ GAME ID MUST BE 7+ DIGITS (NUMBERS ONLY)'; errEl.classList.add('show'); return; }
+    if (pw.length < 6) { errEl.textContent = '⚠ PASSWORD MUST BE 6+ CHARACTERS'; errEl.classList.add('show'); return; }
+
     this.textContent = 'AUTHENTICATING...'; this.classList.add('loading');
-    setTimeout(() => {
-      this.textContent = 'DROP IN 🪂'; this.classList.remove('loading');
-      if (/^\d{7,}$/.test(gid) && pw.length >= 6) {
-        document.getElementById('loginSuccess').classList.add('show');
-        setTimeout(() => showPage('profile'), 1500);
-      } else {
-        document.getElementById('loginError').textContent = '⚠ INVALID GAME ID — MUST BE 7+ DIGITS';
-        document.getElementById('loginError').classList.add('show');
+
+    try {
+      // Look up email by game_id
+      const { data: profile, error: profileErr } = await sb
+        .from('profiles')
+        .select('email')
+        .eq('game_id', gid)
+        .single();
+
+      if (profileErr || !profile) {
+        errEl.textContent = '⚠ GAME ID NOT FOUND'; errEl.classList.add('show');
+        this.textContent = 'DROP IN 🪂'; this.classList.remove('loading'); return;
       }
-    }, 1400);
+
+      // Sign in with email + password
+      const { data, error } = await sb.auth.signInWithPassword({ email: profile.email, password: pw });
+
+      if (error) {
+        errEl.textContent = '⚠ INCORRECT PASSWORD'; errEl.classList.add('show');
+        this.textContent = 'DROP IN 🪂'; this.classList.remove('loading'); return;
+      }
+
+      sucEl.classList.add('show');
+      await loadProfile(data.user.id);
+      setTimeout(() => showPage('profile'), 1500);
+
+    } catch(e) {
+      errEl.textContent = '⚠ CONNECTION ERROR — TRY AGAIN'; errEl.classList.add('show');
+    }
+    this.textContent = 'DROP IN 🪂'; this.classList.remove('loading');
   });
 
-  // REGISTER steps
-  let generatedOTP = '';
+  // ── REGISTER ─────────────────────────────────────────────────────
+  let regData = {};
+
   function regGoTo(n) {
     document.querySelectorAll('.form-page').forEach((p, i) => p.classList.toggle('active', i === n - 1));
     ['rs1','rs2','rs3','rs4'].forEach((id, i) => {
@@ -561,14 +617,49 @@
   function showRegError(msg) {
     const el = document.getElementById('regError');
     el.textContent = '⚠ ' + msg; el.classList.add('show');
-    setTimeout(() => el.classList.remove('show'), 3000);
+    setTimeout(() => el.classList.remove('show'), 3500);
   }
 
-  // Generate & "send" OTP (demo)
-  function sendOTP() {
-    generatedOTP = String(Math.floor(1000 + Math.random() * 9000));
-    console.log('Demo OTP:', generatedOTP); // In production Supabase sends this
-    // Show resend timer
+  // Step 1
+  document.getElementById('rNext1').addEventListener('click', async () => {
+    const gameId = document.getElementById('regUsername').value.trim();
+    const email = document.getElementById('regEmail').value.trim();
+    const region = document.getElementById('regRegion').value;
+    if (!gameId) { showRegError('ENTER YOUR GAME ID'); return; }
+    if (!/^\d{7,}$/.test(gameId)) { showRegError('GAME ID MUST BE 7+ DIGITS (NUMBERS ONLY)'); return; }
+    if (!email || !email.includes('@')) { showRegError('ENTER A VALID EMAIL'); return; }
+    if (!region) { showRegError('SELECT YOUR REGION'); return; }
+
+    // Check if game_id already taken
+    const { data: existing } = await sb.from('profiles').select('game_id').eq('game_id', gameId).single();
+    if (existing) { showRegError('GAME ID ALREADY TAKEN — CHOOSE ANOTHER'); return; }
+
+    regData.gameId = gameId;
+    regData.email = email;
+    regData.region = region;
+    regData.avatar = document.querySelector('input[name="reg-avatar"]:checked')?.value || '🐺';
+    regGoTo(2);
+  });
+  document.getElementById('rBack1').addEventListener('click', () => regGoTo(1));
+
+  // Step 2
+  document.getElementById('rNext2').addEventListener('click', async () => {
+    regData.role = document.querySelector('input[name="reg-role"]:checked')?.value || 'RIFLER';
+    regData.bio = document.getElementById('regBio').value.trim();
+
+    // Send OTP via Supabase
+    document.getElementById('verifyEmailDisplay').textContent = regData.email;
+    ['otp1','otp2','otp3','otp4'].forEach(id => { document.getElementById(id).value = ''; document.getElementById(id).classList.remove('filled','error'); });
+
+    const { error } = await sb.auth.signInWithOtp({ email: regData.email, options: { shouldCreateUser: false } });
+    // Note: we send OTP for verification. If user doesn't exist yet that's fine — we just need to verify the email
+    startResendTimer();
+    regGoTo(3);
+  });
+  document.getElementById('rBack2').addEventListener('click', () => regGoTo(2));
+
+  // Resend timer
+  function startResendTimer() {
     let secs = 30;
     const resendBtn = document.getElementById('resendCode');
     const timer = document.getElementById('resendTimer');
@@ -579,29 +670,6 @@
       if (secs < 0) { clearInterval(interval); resendBtn.style.display = 'inline'; timer.style.display = 'none'; }
     }, 1000);
   }
-
-  document.getElementById('rNext1').addEventListener('click', () => {
-    const u = document.getElementById('regUsername').value.trim();
-    const e = document.getElementById('regEmail').value.trim();
-    const r = document.getElementById('regRegion').value;
-    if (!u) { showRegError('ENTER YOUR GAME ID'); return; }
-    if (!/^\d{7,}$/.test(u)) { showRegError('GAME ID MUST BE 7+ DIGITS (NUMBERS ONLY)'); return; }
-    if (!e || !e.includes('@')) { showRegError('ENTER A VALID EMAIL'); return; }
-    if (!r) { showRegError('SELECT YOUR REGION'); return; }
-    regGoTo(2);
-  });
-  document.getElementById('rBack1').addEventListener('click', () => regGoTo(1));
-
-  document.getElementById('rNext2').addEventListener('click', () => {
-    // Send OTP and go to verify step
-    const email = document.getElementById('regEmail').value.trim();
-    document.getElementById('verifyEmailDisplay').textContent = email;
-    sendOTP();
-    // Clear OTP boxes
-    ['otp1','otp2','otp3','otp4'].forEach(id => { document.getElementById(id).value = ''; document.getElementById(id).classList.remove('filled','error'); });
-    regGoTo(3);
-  });
-  document.getElementById('rBack2').addEventListener('click', () => regGoTo(2));
 
   // OTP box auto-jump
   ['otp1','otp2','otp3','otp4'].forEach((id, i, arr) => {
@@ -616,23 +684,30 @@
     });
   });
 
-  // Resend
-  document.getElementById('resendCode').addEventListener('click', () => {
-    sendOTP();
-    showRegError('NEW CODE SENT TO YOUR EMAIL');
+  document.getElementById('resendCode').addEventListener('click', async () => {
+    await sb.auth.signInWithOtp({ email: regData.email, options: { shouldCreateUser: false } });
+    startResendTimer();
+    showRegError('NEW CODE SENT!');
   });
 
-  document.getElementById('rNext3').addEventListener('click', () => {
-    const entered = ['otp1','otp2','otp3','otp4'].map(id => document.getElementById(id).value).join('');
-    if (entered.length < 4) { showRegError('ENTER THE 4-DIGIT CODE'); return; }
-    // Demo: accept the generated OTP OR "1234" as test code
-    if (entered === generatedOTP || entered === '1234') {
-      ['otp1','otp2','otp3','otp4'].forEach(id => document.getElementById(id).classList.remove('error'));
-      regGoTo(4);
-    } else {
+  // Step 3 - Verify OTP
+  document.getElementById('rNext3').addEventListener('click', async () => {
+    const token = ['otp1','otp2','otp3','otp4'].map(id => document.getElementById(id).value).join('');
+    if (token.length < 4) { showRegError('ENTER THE 4-DIGIT CODE'); return; }
+
+    const btn = document.getElementById('rNext3');
+    btn.textContent = 'VERIFYING...'; btn.classList.add('loading');
+
+    const { error } = await sb.auth.verifyOtp({ email: regData.email, token, type: 'email' });
+
+    btn.textContent = 'VERIFY & CONTINUE →'; btn.classList.remove('loading');
+
+    if (error) {
       ['otp1','otp2','otp3','otp4'].forEach(id => { const el = document.getElementById(id); el.classList.add('error'); el.classList.remove('filled'); setTimeout(() => el.classList.remove('error'), 500); });
       showRegError('INCORRECT CODE — TRY AGAIN');
+      return;
     }
+    regGoTo(4);
   });
   document.getElementById('rBack3').addEventListener('click', () => regGoTo(3));
 
@@ -654,24 +729,55 @@
     label.textContent = lbls[score-1] || 'WEAK';
   });
 
-  // Register toggle pw
   document.getElementById('regTogglePw').addEventListener('click', function() {
     const i = document.getElementById('regPw');
     i.type = i.type === 'password' ? 'text' : 'password';
     this.textContent = i.type === 'password' ? 'SHOW' : 'HIDE';
   });
 
-  document.getElementById('regSubmit').addEventListener('click', function() {
+  // Step 4 - Create account
+  document.getElementById('regSubmit').addEventListener('click', async function() {
     const pw = document.getElementById('regPw').value;
     const cpw = document.getElementById('regConfirmPw').value;
     if (pw.length < 6) { showRegError('PASSWORD MUST BE AT LEAST 6 CHARACTERS'); return; }
     if (pw !== cpw) { showRegError('PASSWORDS DO NOT MATCH'); return; }
+
     this.textContent = 'CREATING PROFILE...'; this.style.opacity = '0.7'; this.style.pointerEvents = 'none';
-    setTimeout(() => {
+
+    try {
+      // Sign up with Supabase Auth
+      const { data, error } = await sb.auth.signUp({
+        email: regData.email,
+        password: pw,
+        options: {
+          data: {
+            game_id: regData.gameId,
+            username: 'PLAYER_' + regData.gameId,
+            region: regData.region,
+            role: regData.role,
+            bio: regData.bio,
+            avatar: regData.avatar
+          }
+        }
+      });
+
+      if (error) { showRegError(error.message.toUpperCase()); this.textContent = 'JOIN THE SQUAD 🔥'; this.style.opacity = '1'; this.style.pointerEvents = 'auto'; return; }
+
       document.getElementById('regSuccess').classList.add('show');
       document.querySelectorAll('#page-register .form-page').forEach(p => p.style.display = 'none');
-      setTimeout(() => showPage('login'), 2000);
-    }, 1500);
-  });</script>
+      setTimeout(() => showPage('login'), 2500);
+
+    } catch(e) {
+      showRegError('CONNECTION ERROR — TRY AGAIN');
+      this.textContent = 'JOIN THE SQUAD 🔥'; this.style.opacity = '1'; this.style.pointerEvents = 'auto';
+    }
+  });
+
+  // ── Logout button (optional) ─────────────────────────────────────
+  async function logout() {
+    await sb.auth.signOut();
+    showPage('login');
+  }
+</script>
 </body>
 </html>
