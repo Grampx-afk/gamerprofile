@@ -124,11 +124,12 @@
   /* ROLE GRID */
   .role-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .role-option { display: none; }
-  .role-label { display: flex; align-items: center; gap: 10px; border: 1px solid rgba(255,106,0,0.2); background: var(--card2); padding: 12px 14px; cursor: pointer; transition: all 0.2s; }
-  .role-option:checked + .role-label { border-color: var(--fire); background: rgba(255,106,0,0.1); box-shadow: var(--glow-fire); }
-  .role-icon { font-size: 1.4rem; }
-  .role-text { font-family: 'Barlow Condensed', sans-serif; font-size: 0.9rem; font-weight: 700; color: #fff; letter-spacing: 1px; display: block; line-height: 1.1; }
-  .role-sub { font-family: 'Share Tech Mono', monospace; font-size: 0.55rem; color: rgba(232,213,176,0.4); display: block; }
+  .role-label { display: flex; align-items: center; gap: 12px; border: 1px solid rgba(255,106,0,0.2); background: var(--card2); padding: 16px 14px; cursor: pointer; transition: all 0.2s; }
+  .role-option:checked + .role-label { border-color: var(--fire); background: rgba(255,106,0,0.12); box-shadow: var(--glow-fire); }
+  .role-label:hover { border-color: rgba(255,106,0,0.5); }
+  .role-icon { font-size: 1.8rem; }
+  .role-text { font-family: 'Barlow Condensed', sans-serif; font-size: 1rem; font-weight: 700; color: #fff; letter-spacing: 1px; display: block; line-height: 1.1; }
+  .role-sub { font-family: 'Share Tech Mono', monospace; font-size: 0.55rem; color: rgba(232,213,176,0.4); display: block; margin-top: 2px; }
 
   /* PW STRENGTH */
   .pw-strength { margin-top: 8px; }
@@ -279,13 +280,13 @@
       <div class="profile-info">
         <div class="tag">// ESPORT ATHLETE</div>
         <h1 class="gamer-name">SHADOW_<span class="accent">WOLF</span></h1>
-        <p class="gamer-handle">@shadowwolf.ff · ID: #FF-44291</p>
+        <p class="gamer-handle">@shadowwolf.ff · ID: 4429182</p>
         <p class="bio">Professional Free Fire competitor. Ranked Top 50 globally. Known for aggressive rotations, clutch plays, and reading the zone better than anyone in the lobby.</p>
         <div class="esport-role">
-          <span class="role-icon-sm">⚔️</span>
+          <span class="role-icon-sm">🔫</span>
           <div>
             <span class="role-label-sm">// ESPORT ROLE</span>
-            <span class="role-value">ENTRY FRAGGER · SQUAD CAPTAIN</span>
+            <span class="role-value">RIFLER · SQUAD CAPTAIN</span>
           </div>
         </div>
         <div class="social-row">
@@ -365,10 +366,10 @@
       <div class="alert error" id="loginError">⚠ INVALID GAME ID OR PASSWORD</div>
       <div class="alert success" id="loginSuccess">✓ DROPPING IN — LOADING PROFILE...</div>
       <div class="field">
-        <label>// GAME ID</label>
+        <label>// GAME ID (7+ DIGITS)</label>
         <div class="input-wrap">
           <span class="input-icon">🎯</span>
-          <input type="text" id="loginGameId" placeholder="e.g. SHADOW_WOLF#FF-44291" spellcheck="false" />
+          <input type="text" id="loginGameId" placeholder="e.g. 4429182" inputmode="numeric" maxlength="15" />
         </div>
       </div>
       <div class="field">
@@ -424,7 +425,7 @@
             <input type="radio" name="reg-avatar" id="ra6" class="avatar-opt" value="🐯" /><label for="ra6" class="avatar-pick">🐯</label>
           </div>
         </div>
-        <div class="field"><label>// GAME ID</label><div class="input-wrap"><span class="input-icon">🎮</span><input type="text" id="regUsername" placeholder="e.g. SHADOW_WOLF" spellcheck="false" /></div></div>
+        <div class="field"><label>// GAME ID (7+ DIGITS, NUMBERS ONLY)</label><div class="input-wrap"><span class="input-icon">🎮</span><input type="text" id="regUsername" placeholder="e.g. 4429182" inputmode="numeric" maxlength="15" /></div></div>
         <div class="field"><label>// EMAIL ADDRESS</label><div class="input-wrap"><span class="input-icon">📧</span><input type="email" id="regEmail" placeholder="your@email.com" /></div></div>
         <div class="field"><label>// REGION</label><div class="input-wrap"><span class="input-icon">🌍</span><select id="regRegion"><option value="">SELECT YOUR REGION</option><option>AFRICA</option><option>NORTH AMERICA</option><option>SOUTH AMERICA</option><option>EUROPE</option><option>ASIA</option><option>MIDDLE EAST</option><option>OCEANIA</option></select></div></div>
         <div class="btn-row"><button class="btn-primary" id="rNext1">NEXT: PICK ROLE →</button></div>
@@ -435,12 +436,10 @@
         <div class="field">
           <label>// YOUR ESPORT ROLE</label>
           <div class="role-grid">
-            <input type="radio" name="reg-role" id="rr1" class="role-option" value="ENTRY FRAGGER" checked /><label for="rr1" class="role-label"><span class="role-icon">⚔️</span><div><span class="role-text">ENTRY FRAGGER</span><span class="role-sub">First in, first kill</span></div></label>
+            <input type="radio" name="reg-role" id="rr1" class="role-option" value="RIFLER" checked /><label for="rr1" class="role-label"><span class="role-icon">🔫</span><div><span class="role-text">RIFLER</span><span class="role-sub">Close & mid range fragging</span></div></label>
             <input type="radio" name="reg-role" id="rr2" class="role-option" value="SNIPER" /><label for="rr2" class="role-label"><span class="role-icon">🎯</span><div><span class="role-text">SNIPER</span><span class="role-sub">Long range domination</span></div></label>
-            <input type="radio" name="reg-role" id="rr3" class="role-option" value="IGL" /><label for="rr3" class="role-label"><span class="role-icon">📡</span><div><span class="role-text">IGL</span><span class="role-sub">In-game leader</span></div></label>
+            <input type="radio" name="reg-role" id="rr3" class="role-option" value="NADER" /><label for="rr3" class="role-label"><span class="role-icon">💣</span><div><span class="role-text">NADER</span><span class="role-sub">Grenade & utility expert</span></div></label>
             <input type="radio" name="reg-role" id="rr4" class="role-option" value="SUPPORT" /><label for="rr4" class="role-label"><span class="role-icon">🛡️</span><div><span class="role-text">SUPPORT</span><span class="role-sub">Keep the team alive</span></div></label>
-            <input type="radio" name="reg-role" id="rr5" class="role-option" value="RUSHER" /><label for="rr5" class="role-label"><span class="role-icon">💨</span><div><span class="role-text">RUSHER</span><span class="role-sub">Fast & aggressive</span></div></label>
-            <input type="radio" name="reg-role" id="rr6" class="role-option" value="LURKER" /><label for="rr6" class="role-label"><span class="role-icon">👻</span><div><span class="role-text">LURKER</span><span class="role-sub">Stealth & flanking</span></div></label>
           </div>
         </div>
         <div class="field"><label>// BIO (OPTIONAL)</label><div class="input-wrap"><span class="input-icon">✍️</span><input type="text" id="regBio" placeholder="Tell the squad who you are..." /></div></div>
@@ -503,15 +502,16 @@
     document.getElementById('loginError').classList.remove('show');
     document.getElementById('loginSuccess').classList.remove('show');
     if (!gid || !pw) { document.getElementById('loginError').textContent = '⚠ FILL IN ALL FIELDS'; document.getElementById('loginError').classList.add('show'); return; }
+    if (!/^\d{7,}$/.test(gid)) { document.getElementById('loginError').textContent = '⚠ GAME ID MUST BE 7+ DIGITS (NUMBERS ONLY)'; document.getElementById('loginError').classList.add('show'); return; }
     if (pw.length < 6) { document.getElementById('loginError').textContent = '⚠ PASSWORD MUST BE 6+ CHARACTERS'; document.getElementById('loginError').classList.add('show'); return; }
     this.textContent = 'AUTHENTICATING...'; this.classList.add('loading');
     setTimeout(() => {
       this.textContent = 'DROP IN 🪂'; this.classList.remove('loading');
-      if (gid.includes('#') && pw.length >= 6) {
+      if (/^\d{7,}$/.test(gid) && pw.length >= 6) {
         document.getElementById('loginSuccess').classList.add('show');
         setTimeout(() => showPage('profile'), 1500);
       } else {
-        document.getElementById('loginError').textContent = '⚠ INVALID GAME ID — USE FORMAT: NAME#FF-XXXXX';
+        document.getElementById('loginError').textContent = '⚠ INVALID GAME ID — MUST BE 7+ DIGITS';
         document.getElementById('loginError').classList.add('show');
       }
     }, 1400);
@@ -537,6 +537,7 @@
     const e = document.getElementById('regEmail').value.trim();
     const r = document.getElementById('regRegion').value;
     if (!u) { showRegError('ENTER YOUR GAME ID'); return; }
+    if (!/^\d{7,}$/.test(u)) { showRegError('GAME ID MUST BE 7+ DIGITS (NUMBERS ONLY)'); return; }
     if (!e || !e.includes('@')) { showRegError('ENTER A VALID EMAIL'); return; }
     if (!r) { showRegError('SELECT YOUR REGION'); return; }
     regGoTo(2);
