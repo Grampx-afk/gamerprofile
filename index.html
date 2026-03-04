@@ -554,7 +554,7 @@
         .from('profiles')
         .select('email')
         .eq('game_id', gid)
-        .single();
+        .maybeSingle();
 
       if (profileErr || !profile) {
         errEl.textContent = '⚠ GAME ID NOT FOUND'; errEl.classList.add('show');
@@ -608,7 +608,7 @@
     if (!region) { showRegError('SELECT YOUR REGION'); return; }
 
     // Check if game_id already taken
-    const { data: existing } = await sb.from('profiles').select('game_id').eq('game_id', gameId).single();
+    const { data: existing } = await sb.from('profiles').select('game_id').eq('game_id', gameId).maybeSingle();
     if (existing) { showRegError('GAME ID ALREADY TAKEN — CHOOSE ANOTHER'); return; }
 
     regData.gameId = gameId;
@@ -625,8 +625,6 @@
     regData.bio = document.getElementById('regBio').value.trim();
     regGoTo(3);
   });
-  document.getElementById('rBack1').addEventListener('click', () => regGoTo(1));
-  document.getElementById('rBack2').addEventListener('click', () => regGoTo(2));
 
   // Back button on step 3 (password) goes to step 2
   document.getElementById('rBack3').addEventListener('click', () => regGoTo(2));
