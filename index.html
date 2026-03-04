@@ -273,7 +273,7 @@
 </nav>
 
 <!-- ========== PROFILE PAGE ========== -->
-<div class="page active" id="page-profile">
+<div class="page" id="page-profile">
   <div class="profile-container">
     <section class="hero">
       <div class="avatar-wrap">
@@ -411,8 +411,7 @@
       <div class="steps">
         <div class="step active" id="rs1"><div class="step-num">1</div><div class="step-label">IDENTITY</div></div>
         <div class="step" id="rs2"><div class="step-num">2</div><div class="step-label">ROLE</div></div>
-        <div class="step" id="rs3"><div class="step-num">3</div><div class="step-label">VERIFY</div></div>
-        <div class="step" id="rs4"><div class="step-num">4</div><div class="step-label">SECURITY</div></div>
+        <div class="step" id="rs4"><div class="step-num">3</div><div class="step-label">SECURITY</div></div>
       </div>
 
       <div class="alert error" id="regError"></div>
@@ -449,34 +448,10 @@
           </div>
         </div>
         <div class="field"><label>// BIO (OPTIONAL)</label><div class="input-wrap"><span class="input-icon">✍️</span><input type="text" id="regBio" placeholder="Tell the squad who you are..." /></div></div>
-        <div class="btn-row"><button class="btn-secondary" id="rBack1">← BACK</button><button class="btn-primary" id="rNext2">NEXT: VERIFY EMAIL →</button></div>
+        <div class="btn-row"><button class="btn-secondary" id="rBack1">← BACK</button><button class="btn-primary" id="rNext2">NEXT: SET PASSWORD →</button></div>
       </div>
 
-      <!-- STEP 3: EMAIL VERIFICATION -->
-      <div class="form-page" id="rp3">
-        <div style="text-align:center; margin-bottom:24px;">
-          <div style="font-size:3rem; margin-bottom:10px; filter: drop-shadow(0 0 12px rgba(255,106,0,0.7))">📧</div>
-          <p style="font-family:'Teko',sans-serif; font-size:1.3rem; color:#fff; letter-spacing:2px; margin-bottom:6px;">CHECK YOUR EMAIL</p>
-          <p id="verifyEmailDisplay" style="font-family:'Share Tech Mono',monospace; font-size:0.7rem; color:var(--fire); letter-spacing:2px;"></p>
-          <p style="font-family:'Share Tech Mono',monospace; font-size:0.6rem; color:rgba(232,213,176,0.35); margin-top:6px; letter-spacing:1px;">A 4-DIGIT CODE HAS BEEN SENT TO YOUR EMAIL</p>
-        </div>
-        <div class="field">
-          <label>// ENTER 4-DIGIT CODE</label>
-          <div style="display:flex; gap:10px; justify-content:center; margin-top:6px;">
-            <input type="text" class="otp-box" id="otp1" maxlength="1" inputmode="numeric" />
-            <input type="text" class="otp-box" id="otp2" maxlength="1" inputmode="numeric" />
-            <input type="text" class="otp-box" id="otp3" maxlength="1" inputmode="numeric" />
-            <input type="text" class="otp-box" id="otp4" maxlength="1" inputmode="numeric" />
-          </div>
-        </div>
-        <div style="text-align:center; margin: 12px 0 20px;">
-          <a id="resendCode" style="font-family:'Share Tech Mono',monospace; font-size:0.6rem; color:var(--fire); cursor:pointer; letter-spacing:2px;">RESEND CODE</a>
-          <span id="resendTimer" style="font-family:'Share Tech Mono',monospace; font-size:0.6rem; color:rgba(232,213,176,0.3); letter-spacing:2px; display:none;"></span>
-        </div>
-        <div class="btn-row"><button class="btn-secondary" id="rBack2">← BACK</button><button class="btn-primary" id="rNext3">VERIFY & CONTINUE →</button></div>
-      </div>
-
-      <!-- STEP 4: SECURITY -->
+      <!-- STEP 3: SECURITY -->
       <div class="form-page" id="rp4">
         <div class="field">
           <label>// CREATE PASSWORD (6+ CHARACTERS)</label>
@@ -533,6 +508,8 @@
     if (session) {
       await loadProfile(session.user.id);
       showPage('profile');
+    } else {
+      showPage('login');
     }
   }
   checkSession();
@@ -607,7 +584,7 @@
 
   function regGoTo(n) {
     document.querySelectorAll('.form-page').forEach((p, i) => p.classList.toggle('active', i === n - 1));
-    ['rs1','rs2','rs3','rs4'].forEach((id, i) => {
+    ['rs1','rs2','rs4'].forEach((id, i) => {
       const s = document.getElementById(id);
       s.classList.remove('active','done');
       if (i < n - 1) s.classList.add('done');
@@ -646,70 +623,13 @@
   document.getElementById('rNext2').addEventListener('click', async () => {
     regData.role = document.querySelector('input[name="reg-role"]:checked')?.value || 'RIFLER';
     regData.bio = document.getElementById('regBio').value.trim();
-
-    // Send OTP via Supabase
-    document.getElementById('verifyEmailDisplay').textContent = regData.email;
-    ['otp1','otp2','otp3','otp4'].forEach(id => { document.getElementById(id).value = ''; document.getElementById(id).classList.remove('filled','error'); });
-
-    const { error } = await sb.auth.signInWithOtp({ email: regData.email, options: { shouldCreateUser: false } });
-    // Note: we send OTP for verification. If user doesn't exist yet that's fine — we just need to verify the email
-    startResendTimer();
     regGoTo(3);
   });
+  document.getElementById('rBack1').addEventListener('click', () => regGoTo(1));
   document.getElementById('rBack2').addEventListener('click', () => regGoTo(2));
 
-  // Resend timer
-  function startResendTimer() {
-    let secs = 30;
-    const resendBtn = document.getElementById('resendCode');
-    const timer = document.getElementById('resendTimer');
-    resendBtn.style.display = 'none'; timer.style.display = 'inline';
-    const interval = setInterval(() => {
-      timer.textContent = 'RESEND IN ' + secs + 'S';
-      secs--;
-      if (secs < 0) { clearInterval(interval); resendBtn.style.display = 'inline'; timer.style.display = 'none'; }
-    }, 1000);
-  }
-
-  // OTP box auto-jump
-  ['otp1','otp2','otp3','otp4'].forEach((id, i, arr) => {
-    const el = document.getElementById(id);
-    el.addEventListener('input', function() {
-      this.value = this.value.replace(/\D/g,'');
-      if (this.value) { this.classList.add('filled'); if (i < arr.length - 1) document.getElementById(arr[i+1]).focus(); }
-      else { this.classList.remove('filled'); }
-    });
-    el.addEventListener('keydown', function(e) {
-      if (e.key === 'Backspace' && !this.value && i > 0) document.getElementById(arr[i-1]).focus();
-    });
-  });
-
-  document.getElementById('resendCode').addEventListener('click', async () => {
-    await sb.auth.signInWithOtp({ email: regData.email, options: { shouldCreateUser: false } });
-    startResendTimer();
-    showRegError('NEW CODE SENT!');
-  });
-
-  // Step 3 - Verify OTP
-  document.getElementById('rNext3').addEventListener('click', async () => {
-    const token = ['otp1','otp2','otp3','otp4'].map(id => document.getElementById(id).value).join('');
-    if (token.length < 4) { showRegError('ENTER THE 4-DIGIT CODE'); return; }
-
-    const btn = document.getElementById('rNext3');
-    btn.textContent = 'VERIFYING...'; btn.classList.add('loading');
-
-    const { error } = await sb.auth.verifyOtp({ email: regData.email, token, type: 'email' });
-
-    btn.textContent = 'VERIFY & CONTINUE →'; btn.classList.remove('loading');
-
-    if (error) {
-      ['otp1','otp2','otp3','otp4'].forEach(id => { const el = document.getElementById(id); el.classList.add('error'); el.classList.remove('filled'); setTimeout(() => el.classList.remove('error'), 500); });
-      showRegError('INCORRECT CODE — TRY AGAIN');
-      return;
-    }
-    regGoTo(4);
-  });
-  document.getElementById('rBack3').addEventListener('click', () => regGoTo(3));
+  // Back button on step 3 (password) goes to step 2
+  document.getElementById('rBack3').addEventListener('click', () => regGoTo(2));
 
   // Password strength
   document.getElementById('regPw').addEventListener('input', function() {
@@ -750,6 +670,7 @@
         email: regData.email,
         password: pw,
         options: {
+          emailRedirectTo: null,
           data: {
             game_id: regData.gameId,
             username: 'PLAYER_' + regData.gameId,
